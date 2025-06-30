@@ -1,4 +1,4 @@
-FROM m.daocloud.io/docker.io/python:3.9-slim-bullseye
+FROM m.daocloud.io/docker.io/library/python:3.11-slim
 
 # Upgrade system packages to reduce vulnerabilities
 RUN apt-get update && apt-get upgrade -y && apt-get install -y libglib2.0-0
