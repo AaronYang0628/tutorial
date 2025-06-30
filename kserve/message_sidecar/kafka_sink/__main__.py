@@ -17,17 +17,7 @@ import argparse
 from kserve import logging
 from .kafka_sink import KafkaSink
 
-DEFAULT_MODEL_NAME = "cloud-event-sidecar"
-
 parser = argparse.ArgumentParser(parents=[kserve.model_server.parser])
-parser.add_argument(
-    "--model_name",
-    default=DEFAULT_MODEL_NAME,
-    help="redirect prediction result to kafka topic.",
-)
-parser.add_argument(
-    "--predictor_host", help="The URL for the model predict function", required=True
-)
 
 args, _ = parser.parse_known_args()
 
