@@ -13,4 +13,4 @@ RUN apt-get update && apt-get install -y libglib2.0-0
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir kserve
 COPY . .
 RUN pip install --no-cache-dir -e .
-ENTRYPOINT ["python", "-m", "kafka_sink"， "--model_name=cloud-event-sidecar"]
+CMD ["python", "-m", "kafka_sink"， "--model_name=cloud-event-sidecar"]
