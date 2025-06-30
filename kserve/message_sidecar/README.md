@@ -4,6 +4,6 @@
 ### Kafka Sink
 - build
 ```shell
-podman build -t docker.io/aaron666/kserve-msg-sink:latest -f ./kafka_sink.Dockerfile .
+podman build -t docker.io/aaron666/kserve-msg-sink:dev -f ./Dockerfile .
 ```
 - test
