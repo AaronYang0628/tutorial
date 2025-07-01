@@ -1,4 +1,3 @@
-import argparse
 import os
 from typing import Dict, Union
 
@@ -25,7 +24,7 @@ kafka_producer = KafkaProducer(
 )
 
 class KafkaSink(kserve.Model):
-    def __init__(self, name: str):
+    def __init__(self, name: str, predictor_host: str):
         super().__init__(name)
         self.predictor_host = predictor_host
         self._key = None
