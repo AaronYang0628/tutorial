@@ -31,8 +31,7 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     }
     python {
         target("**/*.py")
-        // TODO remove
-//        targetExclude("**/csst/**", "**/venv/**")
+       targetExclude("**/csst/**", "**/venv/**")
         // black("24.4.2")
     }
 }
