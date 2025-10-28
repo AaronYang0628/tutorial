@@ -40,3 +40,5 @@ bin/
 /milvus/python/src/__pycache__/*.pyc
 /kserve/message_sidecar/venv
 /kserve/message_sidecar/.idea
+milvus/python/.venv/*
+milvus/python/rag/__pycache__/*

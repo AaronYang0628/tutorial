@@ -1,7 +1,14 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import json
 import os
 import time
-from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask import Flask, request, jsonify, send_from_directory, render_template
+from werkzeug.utils import secure_filename
+import os
 from flask_restx import Api, Resource, fields
 from pymilvus import MilvusClient
 from openai import OpenAI
@@ -9,6 +16,25 @@ from util import embedding_text, read_markdown
 from tqdm import tqdm
 
 app = Flask(__name__)
+
+# 启用CORS支持，允许所有来源的跨域请求
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:30500", "http://127.0.0.1:30500"],
+        "allow_headers": ["Content-Type"],
+        "methods": ["GET", "POST", "OPTIONS"]
+    },
+    r"/img": {
+        "origins": ["http://localhost:30500", "http://127.0.0.1:30500"],
+        "allow_headers": ["Content-Type"],
+        "methods": ["GET", "POST", "OPTIONS"]
+    },
+    r"/uploads/*": {
+        "origins": ["http://localhost:30500", "http://127.0.0.1:30500"],
+        "allow_headers": ["Content-Type"],
+        "methods": ["GET"]
+    }
+})
 
 # 配置Swagger文档
 api = Api(
@@ -44,17 +70,69 @@ def get_config():
         "embedding_dim": int(os.environ.get("EMBEDDING_DIM", "1024")),
         "embedding_model": os.environ.get("EMBEDDING_MODEL", ""),
         "tongyi_api_key": os.environ.get("TONGYI_API_KEY", os.environ.get("OPENAI_API_KEY", "")),
-        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "model_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
         "llm_model": os.environ.get("LLM_MODEL", "gpt-3.5-turbo"),
         "grab_top_n_res": int(os.environ.get("GRABE_TOP_N_RES", "5")),
         "ext_doc_path": os.environ.get("EXT_DOC_PATH", "milvus_docs/en/faq/*.md")
     }
 
+# 定义上传文件夹和允许的文件扩展名
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+# 确保上传文件夹存在
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# 设置应用配置
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# 检查文件扩展名是否允许
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# 图片上传接口
+@app.route('/img', methods=['POST'])
+def upload_image():
+    # 检查请求中是否包含文件
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    file = request.files['file']
+
+    # 检查请求中是否包含文件
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    # 如果用户没有选择文件，浏览器也会提交一个没有文件名的空文件
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    # 检查文件类型是否允许
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'File type not allowed'}), 400
+    
+    # 确保文件名安全并保存文件
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
+    
+    # 构建完整的文件URL路径
+    file_url = f"{request.host_url}uploads/{filename}"
+    
+    return jsonify({'path': file_url}), 200
+
+# 提供上传文件的访问路由
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 # 初始化客户端
 def init_clients(config):
     openai_client = OpenAI(
         api_key=config["tongyi_api_key"],
-        base_url=config["base_url"],
+        base_url=config["model_base_url"],
     )
     
     milvus_client = MilvusClient(uri=config["milvus_uri"], token=config["token"])
@@ -63,6 +141,18 @@ def init_clients(config):
 # 全局客户端实例
 config = get_config()
 openai_client, milvus_client = init_clients(config)
+
+
+# 添加静态文件路由，使HTML文件可以被访问
+@app.route('/')
+def index():
+    # 尝试直接发送index.html文件
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    # 提供对其他静态文件的访问
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), filename)
 
 @ns_chat.route('')
 class ChatResource(Resource):
@@ -127,7 +217,7 @@ class ChatResource(Resource):
             )
             
             return jsonify({
-                "answer": response.choices[0].message.content,
+                "response": response.choices[0].message.content,
                 "sources": retrieved_lines_with_distances
             })
             
@@ -264,6 +354,6 @@ class HealthResource(Resource):
 
 if __name__ == '__main__':
     host = os.environ.get('HOST', '0.0.0.0')
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 30500))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
     app.run(host=host, port=port, debug=debug)

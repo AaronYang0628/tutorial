@@ -2,7 +2,7 @@ import json
 import os
 from pymilvus import MilvusClient
 from openai import OpenAI
-from util import embedding_text
+from milvus.python.util import embedding_text
 
 
 milvus_uri = os.environ.get("MILVUS_URI", "http://localhost:19530")

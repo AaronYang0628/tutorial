@@ -3,7 +3,7 @@ import time
 from tqdm import tqdm
 from pymilvus import MilvusClient
 from openai import OpenAI
-from util import embedding_text, read_markdown
+from milvus.python.util import embedding_text, read_markdown
 
 
 milvus_uri = os.environ.get("MILVUS_URI", "http://localhost:19530")
