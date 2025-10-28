@@ -2,11 +2,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import json
 import os
 import time
 from flask_cors import CORS
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 import os
 from flask_restx import Api, Resource, fields
