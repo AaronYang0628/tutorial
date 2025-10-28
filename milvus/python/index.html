@@ -316,7 +316,7 @@
             <input type="file" id="image-upload" accept="image/*" style="display: none;" />
             <button id="upload-button" class="upload-button">➕</button>
             <input type="text" id="user-input" placeholder="请输入你的问题..." />
-            <button id="submit-button">发送</button>
+            <button id="submit-button">🚀</button>
         </div>
     </div>
 
@@ -349,8 +349,11 @@
             submitButton.innerHTML = '<div class="loading-indicator"></div>';
 
             try {
+                // 动态构造聊天API的URL
+                const chatApiUrl = `http://${window.location.hostname}:${window.location.port}/api/chat`;
+                
                 // 发送请求到后端API
-                const response = await fetch('http://localhost:5000/api/chat', {
+                const response = await fetch(chatApiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -469,6 +472,47 @@
                 
                 // 添加图片预览到聊天界面
                 addImagePreview(data.path);
+
+                // 调用图片搜索API获取相似图片
+                const searchUrl = `http://${window.location.hostname}:${window.location.port}/img/search`;
+                const searchResponse = await fetch(searchUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image_path: data.path })
+                });
+
+                if (searchResponse.ok) {
+                    const searchResults = await searchResponse.json();
+                    if (searchResults.similar_images && searchResults.similar_images.length > 0) {
+                        // 添加相似图片预览
+                        const resultMessage = document.createElement('div');
+                        resultMessage.className = 'message assistant-message';
+                        resultMessage.innerHTML = '<div class="markdown-content"><p>找到以下相似图片：</p></div>';
+                        
+                        const imageGrid = document.createElement('div');
+                        imageGrid.style.display = 'grid';
+                        imageGrid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+                        imageGrid.style.gap = '10px';
+                        imageGrid.style.marginTop = '10px';
+                        
+                        searchResults.similar_images.forEach(imgUrl => {
+                            const imgContainer = document.createElement('div');
+                            const img = document.createElement('img');
+                            img.src = imgUrl;
+                            img.style.width = '100%';
+                            img.style.height = 'auto';
+                            img.style.borderRadius = '4px';
+                            imgContainer.appendChild(img);
+                            imageGrid.appendChild(imgContainer);
+                        });
+                        
+                        resultMessage.appendChild(imageGrid);
+                        chatContainer.appendChild(resultMessage);
+                        scrollToBottom();
+                    }
+                }
                 
             } catch (error) {
                 console.error('Error uploading image:', error);

@@ -42,3 +42,7 @@ bin/
 /kserve/message_sidecar/.idea
 milvus/python/.venv/*
 milvus/python/rag/__pycache__/*
+milvus/python/reverse_image_search/*
+milvus/python/uploads/*
+milvus/python/imgSearch/__pycache__/*
+milvus/python/__pycache__/*

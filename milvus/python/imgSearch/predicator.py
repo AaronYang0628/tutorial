@@ -1,5 +1,5 @@
 import configparser
-
+import os
 from PIL import Image
 
 from pymilvus import MilvusClient
@@ -8,7 +8,11 @@ from feature_extractor import FeatureExtractor
 
 
 cfp = configparser.RawConfigParser()
-cfp.read('config.ini')
+# 使用脚本文件所在目录的路径
+script_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(script_dir, 'config.ini')
+cfp.read(config_path)
+
 milvus_uri = cfp.get('example', 'uri')
 token = cfp.get('example', 'token')
 
@@ -19,7 +23,7 @@ milvus_client = MilvusClient(uri=milvus_uri, token=token)
 print(f"Connected to DB: {milvus_uri} successfully")
 
 
-query_image = "../test/Afghan_hound/n02088094_4261.JPEG"
+query_image = "E:/Github_Self/tutorial/milvus/python/reverse_image_search/test/Afghan_hound/n02088094_4261.JPEG"
 
 results = milvus_client.search(
     "image_embeddings",
@@ -31,6 +35,7 @@ images = []
 for result in results:
     for hit in result[:10]:
         filename = hit["entity"]["filename"]
+        print(filename)
         img = Image.open(filename)
         img = img.resize((150, 150))
         images.append(img)

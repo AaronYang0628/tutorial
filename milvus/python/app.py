@@ -14,23 +14,28 @@ from pymilvus import MilvusClient
 from openai import OpenAI
 from util import embedding_text, read_markdown
 from tqdm import tqdm
+from imgSearch.feature_extractor import FeatureExtractor
 
 app = Flask(__name__)
+
+extractor = FeatureExtractor("resnet34")
+
+origin = os.environ.get("ALLOW_HOST", "http://127.0.0.1:30500")
 
 # 启用CORS支持，允许所有来源的跨域请求
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:30500", "http://127.0.0.1:30500"],
+        "origins": [origin],
         "allow_headers": ["Content-Type"],
         "methods": ["GET", "POST", "OPTIONS"]
     },
     r"/img": {
-        "origins": ["http://localhost:30500", "http://127.0.0.1:30500"],
+        "origins": [origin],
         "allow_headers": ["Content-Type"],
         "methods": ["GET", "POST", "OPTIONS"]
     },
     r"/uploads/*": {
-        "origins": ["http://localhost:30500", "http://127.0.0.1:30500"],
+        "origins": [origin],
         "allow_headers": ["Content-Type"],
         "methods": ["GET"]
     }
@@ -64,7 +69,7 @@ upgrade_model = api.model('UpgradeRequest', {
 # 加载配置
 def get_config():
     return {
-        "milvus_uri": os.environ.get("MILVUS_URI", "http://localhost:19530"),
+        "milvus_uri": os.environ.get("MILVUS_URI", origin),
         "token": os.environ.get("MILVUS_TOKEN", ""),
         "collection_name": os.environ.get("MILVUS_COLLECTION", "default_collection"),
         "embedding_dim": int(os.environ.get("EMBEDDING_DIM", "1024")),
@@ -127,6 +132,61 @@ def upload_image():
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/img/search', methods=['POST'])
+def search_similar_images():
+    try:
+        data = request.json
+        image_path = data.get('image_path')
+        if not image_path:
+            return jsonify({'error': 'No image path provided'}), 400
+
+        # 从URL中提取文件名
+        filename = image_path.split('/')[-1]
+        
+        # 构建服务器上的完整路径
+        full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        if not os.path.exists(full_path):
+            return jsonify({'error': 'Image not found'}), 404
+
+        # 提取特征向量
+        feature_vector = extractor(full_path)
+
+        # 在Milvus中搜索相似图片
+        results = milvus_client.search(
+            "image_embeddings",
+            data=[feature_vector],
+            output_fields=["filename"],
+            search_params={"metric_type": "COSINE"},
+        )
+
+        # 获取前10个结果的文件路径
+        similar_images = []
+        if results and len(results) > 0:
+            for hit in results[0][:10]:
+                src_path = hit["entity"]["filename"]  # 原始文件完整路径
+                if os.path.exists(src_path):
+                    # 从完整路径中提取文件名
+                    filename = os.path.basename(src_path)
+                    # 构建目标路径
+                    dest_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    
+                    # 如果目标文件不存在，复制文件
+                    if not os.path.exists(dest_path):
+                        import shutil
+                        shutil.copy2(src_path, dest_path)
+                    
+                    # 构建完整的URL路径
+                    file_url = f"{request.host_url}uploads/{filename}"
+                    similar_images.append(file_url)
+
+        return jsonify({
+            'similar_images': similar_images
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # 初始化客户端
 def init_clients(config):
