@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-rag-app
+  labels:
+    app: milvus-rag-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: milvus-rag-app
+  template:
+    metadata:
+      labels:
+        app: milvus-rag-app
+    spec:
+      containers:
+      - name: milvus-rag-app
+        image: ghci.io/AaronYang0628/milvus-rag-app:v20251028r1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 30500
+          name: http
+        env:
+        - name: MILVUS_URI
+          valueFrom:
+            secretKeyRef:
+              name: milvus-rag-secrets
+              key: milvus_uri
+        - name: MILVUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: milvus-rag-secrets
+              key: milvus_token
+        - name: TONGYI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: milvus-rag-secrets
+              key: tongyi_api_key
+        - name: MILVUS_COLLECTION
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: MILVUS_COLLECTION
+        - name: EMBEDDING_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: EMBEDDING_MODEL
+        - name: EMBEDDING_DIM
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: EMBEDDING_DIM
+        - name: LLM_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: LLM_MODEL
+        - name: GRABE_TOP_N_RES
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: GRABE_TOP_N_RES
+        - name: EXT_DOC_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: EXT_DOC_PATH
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: milvus-rag-uploads-pvc
