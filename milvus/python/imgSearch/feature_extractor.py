@@ -1,7 +1,7 @@
 import torch
 from PIL import Image
 import timm
-from sklearn.preprocessing import normalize
+import numpy as np
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 
@@ -36,4 +36,10 @@ class FeatureExtractor:
         # Extract the feature vector
         feature_vector = output.squeeze().numpy()
 
-        return normalize(feature_vector.reshape(1, -1), norm="l2").flatten()
+        # L2-normalize using numpy to avoid scikit-learn dependency
+        vec = feature_vector.reshape(-1)
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec = vec / norm
+
+        return vec

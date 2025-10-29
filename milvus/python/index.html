@@ -467,10 +467,7 @@
                 
                 const data = await response.json();
                 
-                // 在输入框中显示图片URL
-                userInput.value = `${userInput.value} ${data.path}`.trim();
-                
-                // 添加图片预览到聊天界面
+                // 添加图片预览到聊天界面（不向输入框插入图片路径）
                 addImagePreview(data.path);
 
                 // 调用图片搜索API获取相似图片
