@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: milvus-rag-app
-        image: ghci.io/AaronYang0628/milvus-rag-app:v20251028r1
+        image: ghci.io/AaronYang0628/milvus-rag-app:slim
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 30500
