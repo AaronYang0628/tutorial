@@ -15,7 +15,7 @@ COPY requirements.txt .
 # 创建虚拟环境并安装依赖
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -r requirements.txt -i https://tsinghua.edu.cn/pypi/web/simple
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 第二阶段：最终镜像
 FROM python:3.12-slim
