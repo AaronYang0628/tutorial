@@ -453,7 +453,7 @@
                 
                 // 确定当前页面的端口，动态构造上传URL
                 const currentPort = window.location.port;
-                const uploadUrl = `http://${window.location.hostname}:${currentPort}/img`;
+                const uploadUrl = `http://${window.location.hostname}:${currentPort}/api/file`;
                 
                 // 发送文件到服务器
                 const response = await fetch(uploadUrl, {
@@ -471,7 +471,7 @@
                 addImagePreview(data.path);
 
                 // 调用图片搜索API获取相似图片
-                const searchUrl = `http://${window.location.hostname}:${window.location.port}/img/search`;
+                const searchUrl = `http://${window.location.hostname}:${window.location.port}/api/img/search`;
                 const searchResponse = await fetch(searchUrl, {
                     method: 'POST',
                     headers: {
@@ -482,7 +482,8 @@
 
                 if (searchResponse.ok) {
                     const searchResults = await searchResponse.json();
-                    if (searchResults.similar_images && searchResults.similar_images.length > 0) {
+                    console.log(searchResults);
+                    if (searchResults.data && searchResults.data.length > 0) {
                         // 添加相似图片预览
                         const resultMessage = document.createElement('div');
                         resultMessage.className = 'message assistant-message';
@@ -494,10 +495,11 @@
                         imageGrid.style.gap = '10px';
                         imageGrid.style.marginTop = '10px';
                         
-                        searchResults.similar_images.forEach(imgUrl => {
+                        searchResults.data.forEach(path => {
                             const imgContainer = document.createElement('div');
                             const img = document.createElement('img');
-                            img.src = imgUrl;
+                            img.src = `http://${window.location.hostname}:${window.location.port}/uploads/preset/images/${path.path}`;
+                            console.log(img.src);
                             img.style.width = '100%';
                             img.style.height = 'auto';
                             img.style.borderRadius = '4px';
@@ -508,6 +510,8 @@
                         resultMessage.appendChild(imageGrid);
                         chatContainer.appendChild(resultMessage);
                         scrollToBottom();
+                    }else{
+                        addError(`没有找到相似图片: ${error.message}`);
                     }
                 }
                 

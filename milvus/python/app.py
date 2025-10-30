@@ -72,6 +72,7 @@ img_search_model = api.model('ImageSearchRequest', {
 file_upload_model = ns_file.parser()
 file_upload_model.add_argument('file', type='file', location='files', required=True, help='要上传的文件')
 
+
 # 加载配置
 def get_config():
     return {
@@ -115,14 +116,17 @@ if not os.path.exists(UPLOAD_FOLDER):
 # 设置应用配置
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# 检查文件扩展名是否允许
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_FILE_EXTENSIONS
+    """检查文件是否有有效的扩展名"""
+    if '.' not in filename:
+        return False
+    return filename.rsplit('.', 1)[1].lower() in ALLOWED_FILE_EXTENSIONS
 
 def allowed_img(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_IMG_EXTENSIONS
+    """检查图片文件是否有有效的扩展名"""
+    if '.' not in filename:
+        return False
+    return filename.rsplit('.', 1)[1].lower() in ALLOWED_IMG_EXTENSIONS
         
 # 添加静态文件路由，使HTML文件可以被访问
 @app.route('/')
@@ -134,7 +138,6 @@ def serve_static(filename):
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), filename)
 
 
-
 @ns_file.route('', methods=['POST'])
 class UploadFileResource(Resource):
     @ns_file.expect(file_upload_model)
@@ -143,13 +146,12 @@ class UploadFileResource(Resource):
     def post(self):
         # 检查请求中是否包含文件
         if 'file' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
+            return {'error': 'No file part'}, 400
         
         file = request.files['file']
         
-        # 如果用户没有选择文件，浏览器也会提交一个没有文件名的空文件
         if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
+            return {'error': 'No selected file'}, 400
         
         upload_folder = None
         if allowed_img(file.filename):
@@ -157,34 +159,24 @@ class UploadFileResource(Resource):
         elif allowed_file(file.filename):
             upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'docs')
         else:
-            return jsonify({'error': 'File type not allowed'}), 400
+            return {'error': 'File type not allowed'}, 400
 
-        filepath = os.path.join(upload_folder, file.filename)
+        # 确保上传文件夹存在
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+            
+        # 使用secure_filename确保文件名安全，并生成唯一文件名避免冲突
+        safe_filename = secure_filename(file.filename)
+        ext = safe_filename.rsplit('.', 1)[1].lower() if '.' in safe_filename else ''
+        unique_filename = f"{os.urandom(8).hex()}.{ext}" if ext else os.urandom(8).hex()
+        filepath = os.path.join(upload_folder, unique_filename)
         file.save(filepath)
         
-        # 构建完整的文件URL路径
-        file_url = f"{request.host_url}{upload_folder}\\{file.filename}"
+        # 构建完整的文件URL路径（使用正斜杠，适用于所有平台）
+        file_url = f"{request.host_url}{upload_folder.replace(os.sep, '/')}/{unique_filename}"
         
-        # 在Flask-RESTX资源类中直接返回字典，让框架自动处理JSON序列化
         return {'path': file_url}
 
-# 提供上传文件的访问路由 - 添加到Swagger文档
-@ns_img.route('/path', methods=['GET'])
-class RetrieveImagePathResource(Resource):
-    @ns_img.doc(params={'filename': '图片文件名'})
-    @api.response(200, '文件访问成功')
-    @api.response(404, '文件不存在')
-    def get(self, filename):
-        try:
-            return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-        except FileNotFoundError:
-            return jsonify({'error': 'File not found'}), 404
-
-# 搜索相似图像API接口 - 同时支持原始路由和Swagger文档
-# 定义图片搜索的请求模型
-img_search_model = ns_img.parser()
-img_search_model.add_argument('file', type='file', location='files', required=True, help='用于搜索相似图片的图片文件')
-img_search_model.add_argument('top_k', type=int, default=5, location='form', help='返回的相似图片数量')
 
 @ns_img.route('/search', methods=['POST'])
 class SearchImageResource(Resource):
@@ -197,12 +189,12 @@ class SearchImageResource(Resource):
         try:
             # 获取请求参数
             data = request.json or {}
-            image_path = data.get('image_path')
+            image_url_path = data.get('image_path')
             top_k = int(data.get('top_k', 10))
             
-            # 验证参数
-            if not image_path:
-                return jsonify({"error": "Missing image_path parameter"}), 400
+            # 从URL路径提取文件名
+            filename = os.path.basename(image_url_path)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', filename)
                 
             if not os.path.exists(image_path):
                 return jsonify({"error": f"Image not found at path: {image_path}"}), 404
@@ -211,6 +203,7 @@ class SearchImageResource(Resource):
             extractor = FeatureExtractor("resnet34")
             collection_name = os.environ.get("IMAGE_COLLECTION_NAME", "image_embeddings")
             
+
             # 使用抽象函数获取相似图像路径
             similar_images = get_similar_image_paths(
                 query_image_path=image_path,
