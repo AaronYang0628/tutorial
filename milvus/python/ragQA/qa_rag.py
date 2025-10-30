@@ -1,12 +1,15 @@
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path="../.env")
 
 import json
 import os
+import sys
 from pymilvus import MilvusClient
 from openai import OpenAI
-from milvus.python.util import embedding_text
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ragQA.util import embedding_text
 
 
 milvus_uri = os.environ.get("MILVUS_URI", "http://localhost:19530")

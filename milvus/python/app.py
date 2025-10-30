@@ -205,12 +205,10 @@ openai_client, milvus_client = init_clients(config)
 # 添加静态文件路由，使HTML文件可以被访问
 @app.route('/')
 def index():
-    # 尝试直接发送index.html文件
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'index.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    # 提供对其他静态文件的访问
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), filename)
 
 @ns_chat.route('')

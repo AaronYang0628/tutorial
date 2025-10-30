@@ -1,7 +1,6 @@
 
 import configparser
 
-from PIL import Image
 import os
 from pymilvus import MilvusClient
 from feature_extractor import FeatureExtractor
