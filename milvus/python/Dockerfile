@@ -1,5 +1,5 @@
 # 使用 Python 3.12 官方镜像作为构建阶段
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 
 # 设置工作目录
 WORKDIR /app
