@@ -4,8 +4,13 @@ metadata:
   name: milvus-rag-config
 data:
   QA_COLLECTION_NAME: "ay_rag_01"
+  IMAGE_COLLECTION_NAME: "ay_rag_01_images"
   EMBEDDING_MODEL: "text-embedding-v4"
-  EMBEDDING_DIM: "1024"
+  EMBEDDING_DIM: 1024
   LLM_MODEL: "qwen3-vl-32b-thinking"
-  GRABE_TOP_N_RES: "3"
-  EXT_DOC_PATH: "milvus_docs/en/faq/*.md"
+  GRABE_TOP_N_RES: 3
+  EXT_DOC_PATH: "uploads/docs"
+  HF_ENDPOINT: "https://hf-mirror.com"
+  LLM_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  TRAIN_IMAGE_ROOT_PATH: "uploads/preset/images"
+  MODE: "cloud"

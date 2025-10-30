@@ -19,3 +19,8 @@ pip install --upgrade pymilvus
 ```shell
 pip install --upgrade pymilvus scikit-learn timm
 ```
+
+3. build image
+```shell
+docker build -t milvus-rag-app:v20251030r1 .
+```

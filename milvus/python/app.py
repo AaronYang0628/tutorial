@@ -10,6 +10,9 @@ from imgSearch.predicator import get_similar_image_paths
 from utils.env_utils import load_env_config
 from ragQA.qa_rag import answer_question
 from ragQA.update_rag import update_rag_collection
+from utils.logger_util import setup_logging
+
+logger = setup_logging()
 
 
 app = Flask(__name__)
@@ -109,8 +112,34 @@ config = get_config()
 openai_client, milvus_client = init_clients(config)
 
 # 确保上传文件夹存在
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'images'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'docs'), exist_ok=True)
+preset_path = os.path.join(UPLOAD_FOLDER, PRESET_FOLDER)
+os.makedirs(preset_path, exist_ok=True)
+if not os.listdir(preset_path): 
+    import requests
+    import zipfile
+    logger.info(f"Preset Image folder is empty, downloading preset images to {preset_path}")
+    # 下载预设图片数据
+    zip_url = "https://github.com/milvus-io/pymilvus-assets/releases/download/imagedata/reverse_image_search.zip"
+    zip_path = os.path.join(preset_path, "reverse_image_search.zip")
+    
+    try:
+        response = requests.get(zip_url)
+        with open(zip_path, 'wb') as f:
+            f.write(response.content)
+        
+        # 解压到preset目录下的images文件夹
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(os.path.join(preset_path, "images"))
+        
+        logger.info("Preset Image zip have been downloaded and extracted.")
+        # 删除下载的zip文件
+        os.remove(zip_path)
+    except Exception as e:
+        logger.error(f"Failed to download or extract preset images: {e}")
+    
     
 
 # 设置应用配置

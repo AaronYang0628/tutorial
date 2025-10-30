@@ -34,11 +34,15 @@ ENV PYTHONUNBUFFERED=1
 # 复制应用代码和静态文件
 COPY app.py .
 COPY index.html .
-COPY util.py .
-COPY imgSearch/feature_extractor.py ./imgSearch/feature_extractor.py
+COPY utils/ ./utils/
+COPY imgSearch/ ./imgSearch/
+COPY ragQA/ ./ragQA/
 
 # 创建上传文件夹
 RUN mkdir -p uploads
+RUN mkdir -p uploads/images
+RUN mkdir -p uploads/docs
+RUN mkdir -p uploads/preset
 
 # 暴露端口
 EXPOSE 30500
