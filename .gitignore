@@ -46,3 +46,6 @@ milvus/python/reverse_image_search/*
 milvus/python/uploads/*
 milvus/python/imgSearch/__pycache__/*
 milvus/python/__pycache__/*
+milvus/python/utils/__pycache__/*
+milvus/python/ragQA/__pycache__/*
+milvus/python/ragQA/__pycache__/*
