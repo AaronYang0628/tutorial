@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: milvus-rag-config
 data:
-  MILVUS_COLLECTION: "ay_rag_demo"
+  MILVUS_COLLECTION: "ay_rag_01"
   EMBEDDING_MODEL: "text-embedding-v4"
   EMBEDDING_DIM: "1024"
   LLM_MODEL: "qwen3-vl-32b-thinking"

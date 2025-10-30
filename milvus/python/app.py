@@ -180,6 +180,7 @@ def search_similar_images():
                     similar_images.append(file_url)
 
         return jsonify({
+            'fetched_results_from_milvus': results[0][:10],
             'similar_images': similar_images
         })
 

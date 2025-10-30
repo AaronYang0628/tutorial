@@ -5,6 +5,11 @@ pip install --upgrade pymilvus openai requests tqdm python-dotenv flask flask_co
 ```
 
 ### Development
+1. build venv
+```shell
+python3 -m venv .venv
+source venv/bin/activate
+```
 1. rag
 ```shell
 pip install --upgrade pymilvus 

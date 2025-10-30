@@ -32,13 +32,12 @@ milvus_client.create_collection(
 )
 
 
-root = "E:/Github_Self/tutorial/milvus/python/reverse_image_search/train"
+root = "E:/Github_Self/tutorial/milvus/python/reverse_image_search"
 insert = True
 if insert is True:
-    for dirpath, foldername, filenames in os.walk(root):
+    for _, foldername, filenames in os.walk(root + "/train"):
         for filename in filenames:
             if filename.endswith(".JPEG"):
-                filepath = dirpath + "/" + filename
                 milvus_client.insert(collection_name,
                     {"vector": extractor(filepath), "filename": filepath},
                 )
