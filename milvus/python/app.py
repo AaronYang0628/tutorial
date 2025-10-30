@@ -5,9 +5,9 @@ from werkzeug.utils import secure_filename
 from flask_restx import Api, Resource, fields
 from pymilvus import MilvusClient
 from openai import OpenAI
-
-from utils.env_utils import load_env_config
 from imgSearch.feature_extractor import FeatureExtractor
+from imgSearch.predicator import get_similar_image_paths
+from utils.env_utils import load_env_config
 from ragQA.qa_rag import answer_question
 from ragQA.update_rag import update_rag_collection
 
@@ -51,6 +51,8 @@ api = Api(
 ns_chat = api.namespace('chat', description='问答相关接口')
 ns_upgrade = api.namespace('upgrade', description='数据库更新相关接口')
 ns_health = api.namespace('health', description='健康检查接口')
+ns_file = api.namespace('file', description='文件处理相关接口')
+ns_img = api.namespace('img', description='图像搜索相关接口')
 
 # 定义请求模型
 chat_model = api.model('ChatRequest', {
@@ -58,16 +60,24 @@ chat_model = api.model('ChatRequest', {
 })
 
 upgrade_model = api.model('UpgradeRequest', {
-    'mode': fields.String(required=False, description='操作模式: create 或 append', default='create'),
+    'mode': fields.String(required=False, description='操作模式: create 或 upgrade', default='upgrade'),
     'doc_path': fields.String(required=False, description='文档路径')
 })
+
+img_search_model = api.model('ImageSearchRequest', {
+    'image_path': fields.String(required=True, description='图像文件路径'),
+    'top_k': fields.Integer(required=False, description='返回结果数量', default=10)
+})
+
+file_upload_model = ns_file.parser()
+file_upload_model.add_argument('file', type='file', location='files', required=True, help='要上传的文件')
 
 # 加载配置
 def get_config():
     return {
         "milvus_uri": os.environ.get("MILVUS_URI", origin),
         "token": os.environ.get("MILVUS_TOKEN", ""),
-        "collection_name": os.environ.get("MILVUS_COLLECTION", "default_collection"),
+        "collection_name": os.environ.get("QA_COLLECTION_NAME", "default_collection"),
         "embedding_dim": int(os.environ.get("EMBEDDING_DIM", "1024")),
         "embedding_model": os.environ.get("EMBEDDING_MODEL", ""),
         "tongyi_api_key": os.environ.get("TONGYI_API_KEY", os.environ.get("OPENAI_API_KEY", "")),
@@ -79,111 +89,9 @@ def get_config():
 
 # 定义上传文件夹和允许的文件扩展名
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-# 确保上传文件夹存在
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-# 设置应用配置
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# 检查文件扩展名是否允许
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# 图片上传接口
-@app.route('/img', methods=['POST'])
-def upload_image():
-    # 检查请求中是否包含文件
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    
-    file = request.files['file']
-
-    # 检查请求中是否包含文件
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    
-    # 如果用户没有选择文件，浏览器也会提交一个没有文件名的空文件
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    
-    # 检查文件类型是否允许
-    if not allowed_file(file.filename):
-        return jsonify({'error': 'File type not allowed'}), 400
-    
-    # 确保文件名安全并保存文件
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
-    
-    # 构建完整的文件URL路径
-    file_url = f"{request.host_url}uploads/{filename}"
-    
-    return jsonify({'path': file_url}), 200
-
-# 提供上传文件的访问路由
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-@app.route('/img/search', methods=['POST'])
-def search_similar_images():
-    try:
-        data = request.json
-        image_path = data.get('image_path')
-        if not image_path:
-            return jsonify({'error': 'No image path provided'}), 400
-
-        # 从URL中提取文件名
-        filename = image_path.split('/')[-1]
-        
-        # 构建服务器上的完整路径
-        full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-        if not os.path.exists(full_path):
-            return jsonify({'error': 'Image not found'}), 404
-
-        # 提取特征向量
-        feature_vector = extractor(full_path)
-
-        # 在Milvus中搜索相似图片
-        results = milvus_client.search(
-            "image_embeddings",
-            data=[feature_vector],
-            output_fields=["filename"],
-            search_params={"metric_type": "COSINE"},
-        )
-
-        # 获取前10个结果的文件路径
-        similar_images = []
-        if results and len(results) > 0:
-            for hit in results[0][:10]:
-                src_path = hit["entity"]["filename"]  # 原始文件完整路径
-                if os.path.exists(src_path):
-                    # 从完整路径中提取文件名
-                    filename = os.path.basename(src_path)
-                    # 构建目标路径
-                    dest_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    
-                    # 如果目标文件不存在，复制文件
-                    if not os.path.exists(dest_path):
-                        import shutil
-                        shutil.copy2(src_path, dest_path)
-                    
-                    # 构建完整的URL路径
-                    file_url = f"{request.host_url}uploads/{filename}"
-                    similar_images.append(file_url)
-
-        return jsonify({
-            'fetched_results_from_milvus': results[0][:10],
-            'similar_images': similar_images
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+PRESET_FOLDER = 'preset'
+ALLOWED_IMG_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_FILE_EXTENSIONS = {'md', 'pdf','txt', 'docx'}
 
 # 初始化客户端
 def init_clients(config):
@@ -199,7 +107,23 @@ def init_clients(config):
 config = get_config()
 openai_client, milvus_client = init_clients(config)
 
+# 确保上传文件夹存在
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+    
 
+# 设置应用配置
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# 检查文件扩展名是否允许
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_FILE_EXTENSIONS
+
+def allowed_img(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_IMG_EXTENSIONS
+        
 # 添加静态文件路由，使HTML文件可以被访问
 @app.route('/')
 def index():
@@ -208,6 +132,112 @@ def index():
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), filename)
+
+
+
+@ns_file.route('', methods=['POST'])
+class UploadFileResource(Resource):
+    @ns_file.expect(file_upload_model)
+    @api.response(200, '上传成功')
+    @api.response(400, '参数错误')
+    def post(self):
+        # 检查请求中是否包含文件
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        
+        file = request.files['file']
+        
+        # 如果用户没有选择文件，浏览器也会提交一个没有文件名的空文件
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        
+        upload_folder = None
+        if allowed_img(file.filename):
+            upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'images')
+        elif allowed_file(file.filename):
+            upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'docs')
+        else:
+            return jsonify({'error': 'File type not allowed'}), 400
+
+        filepath = os.path.join(upload_folder, file.filename)
+        file.save(filepath)
+        
+        # 构建完整的文件URL路径
+        file_url = f"{request.host_url}{upload_folder}\\{file.filename}"
+        
+        # 在Flask-RESTX资源类中直接返回字典，让框架自动处理JSON序列化
+        return {'path': file_url}
+
+# 提供上传文件的访问路由 - 添加到Swagger文档
+@ns_img.route('/path', methods=['GET'])
+class RetrieveImagePathResource(Resource):
+    @ns_img.doc(params={'filename': '图片文件名'})
+    @api.response(200, '文件访问成功')
+    @api.response(404, '文件不存在')
+    def get(self, filename):
+        try:
+            return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+        except FileNotFoundError:
+            return jsonify({'error': 'File not found'}), 404
+
+# 搜索相似图像API接口 - 同时支持原始路由和Swagger文档
+# 定义图片搜索的请求模型
+img_search_model = ns_img.parser()
+img_search_model.add_argument('file', type='file', location='files', required=True, help='用于搜索相似图片的图片文件')
+img_search_model.add_argument('top_k', type=int, default=5, location='form', help='返回的相似图片数量')
+
+@ns_img.route('/search', methods=['POST'])
+class SearchImageResource(Resource):
+    @ns_img.expect(img_search_model)
+    @api.response(200, '搜索成功')
+    @api.response(400, '参数错误')
+    @api.response(404, '图片不存在')
+    @api.response(500, '服务器内部错误')
+    def post(self): 
+        try:
+            # 获取请求参数
+            data = request.json or {}
+            image_path = data.get('image_path')
+            top_k = int(data.get('top_k', 10))
+            
+            # 验证参数
+            if not image_path:
+                return jsonify({"error": "Missing image_path parameter"}), 400
+                
+            if not os.path.exists(image_path):
+                return jsonify({"error": f"Image not found at path: {image_path}"}), 404
+            
+            # 初始化图像搜索所需的组件
+            extractor = FeatureExtractor("resnet34")
+            collection_name = os.environ.get("IMAGE_COLLECTION_NAME", "image_embeddings")
+            
+            # 使用抽象函数获取相似图像路径
+            similar_images = get_similar_image_paths(
+                query_image_path=image_path,
+                milvus_client=milvus_client,
+                extractor=extractor,
+                collection_name=collection_name,
+                top_k=top_k
+            )
+            
+            # 返回结果
+            if similar_images:
+                return jsonify({
+                    "status": "success",
+                    "message": f"Found {len(similar_images)} similar images",
+                    "data": similar_images
+                })
+            else:
+                return jsonify({
+                    "status": "success",
+                    "message": "No similar images found",
+                    "data": []
+                })
+                
+        except Exception as e:
+            app.logger.error(f"Error in image search: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+
 
 @ns_chat.route('')
 class ChatResource(Resource):
@@ -257,7 +287,7 @@ class UpgradeResource(Resource):
             # 重新加载配置以获取最新环境变量
             global config, openai_client, milvus_client
             data = request.json or {}
-            mode = data.get("mode", os.environ.get("MODE", "create"))
+            mode = data.get("mode", os.environ.get("MODE", "upgrade"))
             doc_path = data.get("doc_path", config["ext_doc_path"])
             
             # 使用抽象的update_rag_collection函数更新向量库
@@ -268,8 +298,7 @@ class UpgradeResource(Resource):
                 openai_client=openai_client,
                 collection_name=config["collection_name"],
                 embedding_dim=config["embedding_dim"],
-                embedding_model=config["embedding_model"],
-                logger=app.logger
+                embedding_model=config["embedding_model"]
             )
             
             # 构造返回结果
@@ -320,3 +349,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 30500))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
     app.run(host=host, port=port, debug=debug)
+

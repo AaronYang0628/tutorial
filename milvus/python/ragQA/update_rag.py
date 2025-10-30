@@ -133,7 +133,7 @@ if __name__ == "__main__":
     # 加载配置
     milvus_uri = os.environ.get("MILVUS_URI", "http://localhost:19530")
     token = os.environ.get("MILVUS_TOKEN", "")
-    collection_name = os.environ.get("MILVUS_COLLECTION", "default_collection")
+    collection_name = os.environ.get("QA_COLLECTION_NAME", "default_collection")
     embedding_dim = int(os.environ.get("EMBEDDING_DIM", "1024"))
     embedding_model = os.environ.get("EMBEDDING_MODEL", "text-embedding-v4")
     doc_path = os.environ.get("EXT_DOC_PATH", "milvus_docs/en/faq/*.md")

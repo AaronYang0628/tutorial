@@ -30,11 +30,11 @@ spec:
           value: "32dc6e16e03c11d52247a455ed827bb856077f1603b6b60b4d71f60b7a5f238b9ce73960ce9d4bda9aa9378a800bb9d8d521ec42"
         - name: TONGYI_API_KEY
           value: "sk-f0029ee74a454bddbe1a79c2d55aaca3"
-        - name: MILVUS_COLLECTION
+        - name: QA_COLLECTION_NAME
           valueFrom:
             configMapKeyRef:
               name: milvus-rag-config
-              key: MILVUS_COLLECTION
+              key: QA_COLLECTION_NAME
         - name: EMBEDDING_MODEL
           valueFrom:
             configMapKeyRef:
