@@ -4,8 +4,8 @@ metadata:
   name: milvus-rag-uploads-pvc
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
-  storageClassName: "standard"
+  storageClassName: "local-path"
