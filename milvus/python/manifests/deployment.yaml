@@ -22,6 +22,8 @@ spec:
         - containerPort: 30500
           name: http
         env:
+        - name: HF_ENDPOINT
+          value: https://hf-mirror.com
         - name: MILVUS_URI
           valueFrom:
             secretKeyRef:

@@ -8,10 +8,21 @@ from timm.data.transforms_factory import create_transform
 
 class FeatureExtractor:
     def __init__(self, modelname):
-        # Load the pre-trained model
-        self.model = timm.create_model(
-            modelname, pretrained=True, num_classes=0, global_pool="avg"
-        )
+        # Try to load the pre-trained model. If downloading weights fails (no internet
+        # or hub access), fall back to an uninitialized model to keep the service running.
+        try:
+            # Load the pre-trained model (may download weights from HF/timm hub)
+            self.model = timm.create_model(
+                modelname, pretrained=True, num_classes=0, global_pool="avg"
+            )
+        except Exception as e:
+            # Fallback: create the model without pretrained weights. This avoids
+            # crashing the app if the container has no outbound network access.
+            print(f"Warning: failed to load pretrained weights for {modelname}: {e}\n"
+                  "Falling back to uninitialized model (pretrained=False).")
+            self.model = timm.create_model(
+                modelname, pretrained=False, num_classes=0, global_pool="avg"
+            )
         self.model.eval()
 
         # Get the input size required by the model
