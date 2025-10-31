@@ -138,7 +138,7 @@
 
         .user-message {
             align-self: flex-end;
-            background: #1a1a1a;
+            background: #666;
             color: white;
         }
 
@@ -209,7 +209,7 @@
         }
 
         #submit-button {
-            background: #868585;
+            background: #666;
             color: white;
             border: none;
             width: 36px;
@@ -228,14 +228,14 @@
         }
 
         #submit-button:disabled {
-            background: #f5f5f5;
+            background: #666;
             cursor: not-allowed;
         }
 
         .loading-indicator {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: white;
             animation: spin 1s ease-in-out infinite;
@@ -346,9 +346,9 @@
                     </svg>
                 </button>
                 
-                <input type="text" id="user-input" placeholder="发消息或上传文件或图片进行交流" />
+                <input type="text" id="user-input" placeholder="发消息 或 上传文件或图片进行交流" />
                 
-                <button id="submit-button">↑</button>
+                <button id="submit-button"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="m3.543 8.883 7.042-7.047a2 2 0 0 1 2.828 0l7.043 7.046a1 1 0 0 1 0 1.415l-.701.701a1 1 0 0 1-1.414 0L13.3 5.956v15.792a1 1 0 0 1-1 1h-.99a1 1 0 0 1-1-1V6.342l-4.654 4.656a1 1 0 0 1-1.414 0l-.7-.7a1 1 0 0 1 0-1.415"></path></svg></button>
             </div>
         </div>
     </div>
@@ -412,7 +412,7 @@
                 addError(`请求失败: ${error.message}`);
             } finally {
                 submitButton.disabled = false;
-                submitButton.textContent = '↑';
+                submitButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="m3.543 8.883 7.042-7.047a2 2 0 0 1 2.828 0l7.043 7.046a1 1 0 0 1 0 1.415l-.701.701a1 1 0 0 1-1.414 0L13.3 5.956v15.792a1 1 0 0 1-1 1h-.99a1 1 0 0 1-1-1V6.342l-4.654 4.656a1 1 0 0 1-1.414 0l-.7-.7a1 1 0 0 1 0-1.415"></path></svg>';
                 scrollToBottom();
             }
         }
@@ -565,9 +565,30 @@
                     }
                 } else {
                     addSystemMessage('📚 RAG 正在学习文档内容，文档将被纳入知识库...');
-                    setTimeout(() => {
-                        addAssistantMessage(`✅ 文档 "${file.name}" 已成功学习并纳入知识库`);
-                    }, 1500);
+                    
+                    // 调用 upgrade API 学习文档
+                    const upgradeUrl = `http://${window.location.hostname}:${window.location.port}/api/upgrade`;
+                    const upgradeResponse = await fetch(upgradeUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            mode: 'upgrade',
+                            doc_path: data.path
+                        })
+                    });
+
+                    if (upgradeResponse.ok) {
+                        const upgradeResult = await upgradeResponse.json();
+                        if (upgradeResult.status === 'success') {
+                            addAssistantMessage(`✅ 文档 "${file.name}" 已成功学习并纳入知识库\n\n📊 处理详情：${upgradeResult.message}\n⏱️ 耗时：${upgradeResult.flush_time.toFixed(2)} 秒`);
+                        } else {
+                            addError(`文档学习失败: ${upgradeResult.message || '未知错误'}`);
+                        }
+                    } else {
+                        throw new Error(`Upgrade API error! status: ${upgradeResponse.status}`);
+                    }
                 }
                 
             } catch (error) {

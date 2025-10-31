@@ -310,12 +310,19 @@ class UpgradeResource(Resource):
             global config, openai_client, milvus_client
             data = request.json or {}
             mode = data.get("mode", os.environ.get("MODE", "upgrade"))
-            doc_path = data.get("doc_path", config["ext_doc_path"])
+            doc_path = data.get("doc_path")
+            if not doc_path:
+                return jsonify({"error": "Missing 'doc_path' field in request"}), 400
             
+            filename = os.path.basename(doc_path)
+            abs_doc_path = os.path.join(app.config['UPLOAD_FOLDER'], 'docs', filename)
+                
+            if not os.path.exists(abs_doc_path):
+                return jsonify({"error": f"Document not found at path: {abs_doc_path}"}), 404
             # 使用抽象的update_rag_collection函数更新向量库
             update_result = update_rag_collection(
                 mode=mode,
-                doc_path=doc_path,
+                doc_path=abs_doc_path,
                 milvus_client=milvus_client,
                 openai_client=openai_client,
                 collection_name=config["collection_name"],
