@@ -17,7 +17,7 @@ spec:
       containers:
       - name: milvus-rag-app
         image: ghcr.io/aaronyang0628/milvus-rag-app:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 30500
           name: http
@@ -59,11 +59,11 @@ spec:
             configMapKeyRef:
               name: milvus-rag-config
               key: EMBEDDING_DIM
-        - name: LLM_BASE_URL
+        - name: EMBEDDING_BASE_URL
           valueFrom:
             configMapKeyRef:
               name: milvus-rag-config
-              key: LLM_BASE_URL
+              key: EMBEDDING_BASE_URL
         - name: TRAIN_IMAGE_ROOT_PATH
           valueFrom:
             configMapKeyRef:
@@ -74,6 +74,11 @@ spec:
             configMapKeyRef:
               name: milvus-rag-config
               key: MODE
+        - name: LLM_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: LLM_BASE_URL
         - name: LLM_MODEL
           valueFrom:
             configMapKeyRef:
