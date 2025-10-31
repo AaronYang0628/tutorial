@@ -121,7 +121,7 @@ def update_rag_collection(mode, doc_path, milvus_client, openai_client, collecti
         return result
         
     except Exception as e:
-        log(f"Error during update: {str(e)}")
+        logger.error(f"Error during update: {str(e)}")
         raise
 
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     token = os.environ.get("MILVUS_TOKEN", "")
     collection_name = os.environ.get("QA_COLLECTION_NAME", "default_collection")
     embedding_dim = int(os.environ.get("EMBEDDING_DIM", "1024"))
-    embedding_model = os.environ.get("EMBEDDING_MODEL", "text-embedding-v4")
+    embedding_model = os.environ.get("EMBEDDING_MODEL", "")
     doc_path = os.environ.get("EXT_DOC_PATH", "milvus_docs/en/faq/*.md")
     
     # 初始化客户端
