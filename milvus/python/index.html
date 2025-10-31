@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG 问答助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RAG问答助手</title>
     <style>
         * {
             margin: 0;
@@ -16,21 +16,17 @@
             background: #f5f5f5;
             height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .main-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            height: 85vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
+            width: 100%;
+            height: 100%;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
         .welcome-screen {
@@ -40,8 +36,8 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            padding: 20px;
             animation: fadeIn 0.6s ease;
-            transition: all 0.4s ease;
         }
 
         .welcome-screen.hidden {
@@ -58,10 +54,12 @@
             align-items: baseline;
             gap: 12px;
             margin-bottom: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .welcome-screen h1 {
-            font-size: 3.5rem;
+            font-size: clamp(2rem, 8vw, 3.5rem);
             color: #1a1a1a;
             font-weight: 300;
             letter-spacing: -1px;
@@ -69,17 +67,18 @@
         }
 
         .demo-tag {
-            font-size: 1.2rem;
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
             color: #999;
             font-weight: 300;
         }
 
         .welcome-screen .subtitle {
-            font-size: 1rem;
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
             color: #666;
             margin-bottom: 24px;
             line-height: 1.6;
             max-width: 500px;
+            padding: 0 10px;
         }
 
         .features {
@@ -87,7 +86,9 @@
             flex-direction: column;
             gap: 8px;
             margin-bottom: 32px;
-            text-align: left;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
         }
 
         .feature-card {
@@ -97,7 +98,7 @@
         }
 
         .feature-desc {
-            font-size: 0.9rem;
+            font-size: clamp(0.8rem, 2.2vw, 0.9rem);
             color: #666;
             line-height: 1.6;
         }
@@ -117,15 +118,17 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 24px;
+            overflow-x: hidden;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .message {
-            max-width: 75%;
-            padding: 14px 18px;
+            max-width: 85%;
+            padding: 12px 16px;
             border-radius: 18px;
             word-wrap: break-word;
             animation: messageSlide 0.3s ease;
@@ -152,26 +155,28 @@
             align-self: flex-start;
             background: transparent;
             color: #999;
-            font-size: 0.9rem;
-            padding: 8px 12px;
+            font-size: 0.85rem;
+            padding: 6px 10px;
             font-style: italic;
         }
 
         .input-area {
-            padding: 20px 24px;
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
             border-top: none;
-            background: transparent;
+            background: white;
         }
 
         .input-container {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
             background: #f5f5f5;
             border-radius: 24px;
-            padding: 8px 8px 8px 16px;
+            padding: 6px 6px 6px 12px;
             border: 1px solid #e0e0e0;
             transition: border-color 0.3s ease;
+            width: 100%;
             max-width: 800px;
             margin: 0 auto;
         }
@@ -185,6 +190,7 @@
             border: none;
             width: 36px;
             height: 36px;
+            min-width: 36px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
@@ -193,9 +199,10 @@
             transition: all 0.2s ease;
             font-size: 1.1rem;
             color: #666;
+            flex-shrink: 0;
         }
 
-        .action-button:hover {
+        .action-button:active {
             background: #e0e0e0;
         }
 
@@ -203,9 +210,10 @@
             flex: 1;
             border: none;
             outline: none;
-            font-size: 1rem;
-            padding: 8px 12px;
+            font-size: 16px;
+            padding: 8px 8px;
             background: transparent;
+            min-width: 0;
         }
 
         #submit-button {
@@ -214,6 +222,7 @@
             border: none;
             width: 36px;
             height: 36px;
+            min-width: 36px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
@@ -221,9 +230,10 @@
             justify-content: center;
             transition: all 0.2s ease;
             font-size: 1rem;
+            flex-shrink: 0;
         }
 
-        #submit-button:hover {
+        #submit-button:active {
             background: rgba(227, 24, 79, 1);
         }
 
@@ -248,14 +258,17 @@
         .error-message {
             background: #fff3f3;
             color: #d32f2f;
-            padding: 12px 18px;
+            padding: 12px 16px;
             border-radius: 12px;
             border-left: 4px solid #d32f2f;
             animation: messageSlide 0.3s ease;
+            max-width: 85%;
+            align-self: flex-start;
         }
 
         .markdown-content {
             line-height: 1.6;
+            font-size: 0.95rem;
         }
 
         .markdown-content h1,
@@ -296,13 +309,60 @@
             padding: 0;
         }
 
-        @media (max-width: 768px) {
-            .welcome-screen h1 {
-                font-size: 2.5rem;
+        .markdown-content img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* 桌面端样式优化 */
+        @media (min-width: 769px) {
+            .main-container {
+                max-width: 800px;
+                margin: 0 auto;
+                height: 90vh;
+                margin-top: 5vh;
+                border-radius: 16px;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            }
+
+            body {
+                background: #f5f5f5;
+            }
+
+            .action-button:hover {
+                background: #e0e0e0;
+            }
+
+            #submit-button:hover {
+                background: rgba(227, 24, 79, 1);
             }
 
             .message {
-                max-width: 85%;
+                max-width: 75%;
+            }
+
+            .chat-messages {
+                padding: 24px;
+                gap: 16px;
+            }
+
+            .input-area {
+                padding: 20px 24px;
+            }
+        }
+
+        /* 小屏幕优化 */
+        @media (max-width: 400px) {
+            .welcome-screen h1 {
+                font-size: 2rem;
+            }
+
+            .features {
+                max-width: 100%;
+            }
+
+            .feature-desc {
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -325,7 +385,7 @@
                     <div class="feature-desc">2. 🔍 库内相似图片搜索</div>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-desc">3. 📚 上传文档，即时学习</div>
+                    <div class="feature-desc">3. 📚 上传文档,即时学习</div>
                 </div>
             </div>
         </div>
@@ -335,7 +395,7 @@
             <div class="chat-messages" id="chat-messages"></div>
         </div>
         
-        <!-- 输入区域 - 始终显示 -->
+        <!-- 输入区域 -->
         <div class="input-area">
             <div class="input-container">
                 <input type="file" id="file-upload" accept="*/*" style="display: none;" />
@@ -406,7 +466,7 @@
                 }
 
                 const data = await response.json();
-                addAssistantMessage(data.response || '抱歉，我无法回答这个问题。');
+                addAssistantMessage(data.response || '抱歉,我无法回答这个问题。');
             } catch (error) {
                 console.error('Error:', error);
                 addError(`请求失败: ${error.message}`);
@@ -470,7 +530,9 @@
         }
 
         function scrollToBottom() {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 100);
         }
 
         submitButton.addEventListener('click', handleSubmit);
@@ -537,7 +599,7 @@
                         if (searchResults.data && searchResults.data.length > 0) {
                             const resultMessage = document.createElement('div');
                             resultMessage.className = 'message assistant-message';
-                            resultMessage.innerHTML = '<div class="markdown-content"><p>✅ 找到 ' + searchResults.data.length + ' 张相似图片：</p></div>';
+                            resultMessage.innerHTML = '<div class="markdown-content"><p>✅ 找到 ' + searchResults.data.length + ' 张相似图片:</p></div>';
                             
                             const imageGrid = document.createElement('div');
                             imageGrid.style.display = 'grid';
@@ -564,9 +626,8 @@
                         }
                     }
                 } else {
-                    addSystemMessage('📚 RAG 正在学习文档内容，文档将被纳入知识库...');
+                    addSystemMessage('📚 RAG 正在学习文档内容,文档将被纳入知识库...');
                     
-                    // 调用 upgrade API 学习文档
                     const upgradeUrl = `http://${window.location.hostname}:${window.location.port}/api/upgrade`;
                     const upgradeResponse = await fetch(upgradeUrl, {
                         method: 'POST',
@@ -582,7 +643,7 @@
                     if (upgradeResponse.ok) {
                         const upgradeResult = await upgradeResponse.json();
                         if (upgradeResult.status === 'success') {
-                            addAssistantMessage(`✅ 文档 "${file.name}" 已成功学习并纳入知识库\n\n📊 处理详情：${upgradeResult.message}\n⏱️ 耗时：${upgradeResult.flush_time.toFixed(2)} 秒`);
+                            addAssistantMessage(`✅ 文档 "${file.name}" 已成功学习并纳入知识库\n\n📊 处理详情:${upgradeResult.message}\n⏱️ 耗时:${upgradeResult.flush_time.toFixed(2)} 秒`);
                         } else {
                             addError(`文档学习失败: ${upgradeResult.message || '未知错误'}`);
                         }
