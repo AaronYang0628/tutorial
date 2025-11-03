@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: milvus-rag-app
-        image: ghcr.io/aaronyang0628/milvus-rag-app:latest
+        image: crpi-wixjy6gci86ms14e.cn-hongkong.personal.cr.aliyuncs.com/ay-dev/milvus-rag-app:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 30500
