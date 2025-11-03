@@ -136,7 +136,8 @@ if __name__ == "__main__":
     collection_name = os.environ.get("QA_COLLECTION_NAME", "default_collection")
     embedding_dim = int(os.environ.get("EMBEDDING_DIM", "1024"))
     embedding_model = os.environ.get("EMBEDDING_MODEL", "")
-    doc_path = os.environ.get("EXT_DOC_PATH", "milvus_docs/en/faq/*.md")
+    # doc_path = os.environ.get("EXT_DOC_PATH", "milvus_docs/en/faq/*.md")
+    doc_path = 's3://ay-test/faq/product_faq.md'
     
     # 初始化客户端
     openai_client = OpenAI(
