@@ -3,6 +3,6 @@ kind: ConfigMap
 metadata:
   name: basic-agent-config
 data:
-  LLM_MODEL: "qwen-max"
+  LLM_MODEL_ID: "qwen-max"
   LLM_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   MODE: "cloud"

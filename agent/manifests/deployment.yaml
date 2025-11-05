@@ -22,21 +22,26 @@ spec:
         - containerPort: 5000
           name: http
         env:
-        - name: TONGYI_API_KEY
+        - name: LLM_API_KEY
           valueFrom:
             secretKeyRef:
-              name: milvus-rag-secrets
+              name: basic-agent-secrets
               key: tongyi_api_key
+        - name: SERPAPI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: basic-agent-secrets
+              key: serpapi_api_key
         - name: LLM_BASE_URL
           valueFrom:
             configMapKeyRef:
               name: milvus-rag-config
               key: LLM_BASE_URL
-        - name: LLM_MODEL
+        - name: LLM_MODEL_ID
           valueFrom:
             configMapKeyRef:
               name: milvus-rag-config
-              key: LLM_MODEL
+              key: LLM_MODEL_ID
         resources:
           requests:
             cpu: "500m"
