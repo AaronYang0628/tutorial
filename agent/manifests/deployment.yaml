@@ -35,12 +35,12 @@ spec:
         - name: LLM_BASE_URL
           valueFrom:
             configMapKeyRef:
-              name: milvus-rag-config
+              name: basic-agent-config
               key: LLM_BASE_URL
         - name: LLM_MODEL_ID
           valueFrom:
             configMapKeyRef:
-              name: milvus-rag-config
+              name: basic-agent-config
               key: LLM_MODEL_ID
         resources:
           requests:
