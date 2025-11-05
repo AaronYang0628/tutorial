@@ -55,3 +55,6 @@ agent/ReAct/__pycache__/*
 agent/Thought-Action-Observation/__pycache__/*
 *.env
 *.env.*
+agent/utils/__pycache__/__init__.cpython-312.pyc
+agent/utils/__pycache__/tools.cpython-312.pyc
+agent/utils/__pycache__/llm_client.cpython-312.pyc

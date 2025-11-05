@@ -1,6 +1,12 @@
 import re
-from llm_client import HelloAgentsLLM
-from tools import ToolExecutor, search
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.llm_client import HelloAgentsLLM
+from utils.tools import ToolExecutor, search
+from dotenv import load_dotenv
+
+load_dotenv()
 
 REACT_PROMPT_TEMPLATE = """
 请注意，你是一个有能力调用外部工具的智能助手。
@@ -42,7 +48,7 @@ class ReActAgent:
             prompt = REACT_PROMPT_TEMPLATE.format(tools=tools_desc, question=question, history=history_str)
 
             messages = [{"role": "user", "content": prompt}]
-            response_text = self.llm_client.think(messages=messages)
+            response_text = self.llm_client.think(messages)
             if not response_text:
                 print("错误：LLM未能返回有效响应。"); break
 
