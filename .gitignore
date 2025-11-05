@@ -49,3 +49,9 @@ milvus/python/__pycache__/*
 milvus/python/utils/__pycache__/*
 milvus/python/ragQA/__pycache__/*
 milvus/python/ragQA/__pycache__/*
+agent/ReAct/.venv/*
+agent/Thought-Action-Observation/.venv/*
+agent/ReAct/__pycache__/*
+agent/Thought-Action-Observation/__pycache__/*
+*.env
+*.env.*

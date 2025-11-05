@@ -22,7 +22,7 @@ pip install --upgrade pymilvus scikit-learn timm
 
 3. build image
 ```shell
-docker build -t milvus-rag-app:v20251031r1 .
+docker build -t crpi-wixjy6gci86ms14e.cn-hongkong.personal.cr.aliyuncs.com/ay-dev/milvus-rag-app:latest .
 ```
 
 
