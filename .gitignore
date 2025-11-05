@@ -58,3 +58,7 @@ agent/Thought-Action-Observation/__pycache__/*
 agent/utils/__pycache__/__init__.cpython-312.pyc
 agent/utils/__pycache__/tools.cpython-312.pyc
 agent/utils/__pycache__/llm_client.cpython-312.pyc
+agent/PlanandSolve/__pycache__/__init__.cpython-312.pyc
+agent/Reflection/__pycache__/AgentTest.cpython-312.pyc
+agent/Reflection/__pycache__/__init__.cpython-312.pyc
+agent/PlanandSolve/__pycache__/AgentTest.cpython-312.pyc

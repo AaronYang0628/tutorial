@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basic-agent-app
+  labels:
+    app: basic-agent-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: basic-agent-app
+  template:
+    metadata:
+      labels:
+        app: basic-agent-app
+    spec:
+      containers:
+      - name: basic-agent-app
+        image: crpi-wixjy6gci86ms14e.cn-hongkong.personal.cr.aliyuncs.com/ay-dev/basic-agent-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: TONGYI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: milvus-rag-secrets
+              key: tongyi_api_key
+        - name: LLM_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: LLM_BASE_URL
+        - name: LLM_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: milvus-rag-config
+              key: LLM_MODEL
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"

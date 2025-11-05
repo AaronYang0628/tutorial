@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-rag-app
+spec:
+  selector:
+    app: milvus-rag-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 30500
+      name: http

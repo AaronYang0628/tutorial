@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Multi-Agent 智能助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background: white;
+        }
+
+        .welcome-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .welcome-screen.hidden {
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title-line {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .welcome-screen h1 {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            color: #1a1a1a;
+            font-weight: 300;
+            letter-spacing: -1px;
+            margin: 0;
+        }
+
+        .demo-tag {
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            color: #999;
+            font-weight: 300;
+        }
+
+        .welcome-screen .subtitle {
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.6;
+            max-width: 600px;
+            padding: 0 10px;
+        }
+
+        .agent-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+            width: 100%;
+            max-width: 700px;
+            padding: 0 20px;
+        }
+
+        .agent-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: left;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .agent-card:hover {
+            background: #e9ecef;
+            border-color: #666;
+            transform: translateY(-2px);
+        }
+
+        .agent-card h3 {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .agent-card p {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .chat-interface {
+            display: none;
+            background: transparent;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-interface.active {
+            display: flex;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            animation: messageSlide 0.3s ease;
+        }
+
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: #666;
+            color: white;
+        }
+
+        .assistant-message {
+            align-self: flex-start;
+            background: #f5f5f5;
+            color: #1a1a1a;
+        }
+
+        .system-message {
+            align-self: flex-start;
+            background: transparent;
+            color: #999;
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            font-style: italic;
+        }
+
+        .agent-badge {
+            display: inline-block;
+            background: #666;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+        }
+
+        .time-badge {
+            display: inline-block;
+            background: #e9ecef;
+            color: #666;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-left: 6px;
+        }
+
+        .input-area {
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            border-top: none;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .agent-selector-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 6px;
+        }
+
+        .agent-selector {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            background: white;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .agent-selector:hover {
+            border-color: #666;
+        }
+
+        .agent-selector:focus {
+            border-color: #1a1a1a;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            background: #f5f5f5;
+            border-radius: 24px;
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            transition: border-color 0.3s ease;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .input-container:focus-within {
+            border-color: #1a1a1a;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        #user-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            padding: 8px 8px;
+            background: transparent;
+            min-width: 0;
+        }
+
+        #submit-button {
+            background: #666;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        #submit-button:active {
+            background: rgba(227, 24, 79, 1);
+        }
+
+        #submit-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading-indicator {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fff3f3;
+            color: #d32f2f;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border-left: 4px solid #d32f2f;
+            animation: messageSlide 0.3s ease;
+            max-width: 85%;
+            align-self: flex-start;
+        }
+
+        .process-log {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #555;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .markdown-content {
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .markdown-content code {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .markdown-content pre {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+
+        .markdown-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        /* 桌面端样式优化 */
+        @media (min-width: 769px) {
+            .main-container {
+                max-width: 900px;
+                margin: 0 auto;
+                height: 90vh;
+                margin-top: 5vh;
+                border-radius: 16px;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            }
+
+            body {
+                background: #f5f5f5;
+            }
+
+            #submit-button:hover {
+                background: rgba(227, 24, 79, 1);
+            }
+
+            .message {
+                max-width: 75%;
+            }
+
+            .chat-messages {
+                padding: 24px;
+                gap: 16px;
+            }
+
+            .input-area {
+                padding: 20px 24px;
+            }
+
+            .agent-card:hover {
+                cursor: pointer;
+            }
+
+            .agent-selector-container {
+                padding: 0;
+            }
+        }
+
+        /* 小屏幕优化 */
+        @media (max-width: 768px) {
+            .agent-selector {
+                font-size: 13px;
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- 欢迎屏幕 -->
+        <div class="welcome-screen" id="welcome-screen">
+            <div class="title-line">
+                <h1>Multi-Agent</h1>
+                <span class="demo-tag">AI System</span>
+            </div>
+            <p class="subtitle">智能多代理系统 - 根据任务类型选择最合适的AI助手</p>
+            
+            <div class="agent-cards">
+                <div class="agent-card">
+                    <h3>🎯 Plan-and-Solve</h3>
+                    <p>擅长将复杂问题分解为多个步骤，逐步解决。适合数学问题、多步推理。</p>
+                </div>
+                <div class="agent-card">
+                    <h3>🔍 ReAct</h3>
+                    <p>结合推理和行动，可调用外部工具。适合需要搜索的实时信息查询。</p>
+                </div>
+                <div class="agent-card">
+                    <h3>💡 Reflection</h3>
+                    <p>通过自我反思和迭代优化。适合代码生成和算法优化任务。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 聊天界面 -->
+        <div class="chat-interface" id="chat-interface">
+            <div class="chat-messages" id="chat-messages"></div>
+        </div>
+        
+        <!-- 输入区域 -->
+        <div class="input-area">
+            <!-- Agent选择器 -->
+            <div class="agent-selector-container">
+                <select id="agent-selector" class="agent-selector">
+                    <option value="plan-solve">🎯 Plan-and-Solve - 逻辑推理与规划</option>
+                    <option value="react">🔍 ReAct - 搜索与实时信息</option>
+                    <option value="reflection">💡 Reflection - 代码优化</option>
+                </select>
+            </div>
+            
+            <!-- 输入框 -->
+            <div class="input-container">
+                <div class="input-row">
+                    <input type="text" id="user-input" placeholder="输入你的问题..." />
+                    <button id="submit-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="m3.543 8.883 7.042-7.047a2 2 0 0 1 2.828 0l7.043 7.046a1 1 0 0 1 0 1.415l-.701.701a1 1 0 0 1-1.414 0L13.3 5.956v15.792a1 1 0 0 1-1 1h-.99a1 1 0 0 1-1-1V6.342l-4.654 4.656a1 1 0 0 1-1.414 0l-.7-.7a1 1 0 0 1 0-1.415"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const chatInterface = document.getElementById('chat-interface');
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const submitButton = document.getElementById('submit-button');
+        const agentSelector = document.getElementById('agent-selector');
+
+        let isFirstMessage = true;
+
+        // 根据agent类型获取显示名称
+        function getAgentDisplayName(agentType) {
+            const names = {
+                'plan-solve': 'Plan-and-Solve',
+                'react': 'ReAct',
+                'reflection': 'Reflection'
+            };
+            return names[agentType] || agentType;
+        }
+
+        function hideWelcome() {
+            if (isFirstMessage) {
+                welcomeScreen.classList.add('hidden');
+                chatInterface.classList.add('active');
+                isFirstMessage = false;
+            }
+        }
+
+        async function handleSubmit() {
+            const question = userInput.value.trim();
+            if (!question) return;
+
+            const selectedAgent = agentSelector.value;
+
+            hideWelcome();
+            addUserMessage(question);
+            addSystemMessage(`🤖 正在调用 ${getAgentDisplayName(selectedAgent)} Agent...`);
+            
+            userInput.value = '';
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<div class="loading-indicator"></div>';
+
+            try {
+                const chatApiUrl = `http://${window.location.hostname}:${window.location.port}/api/chat`;
+                
+                const response = await fetch(chatApiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        question: question,
+                        agent_type: selectedAgent
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    addAssistantMessage(
+                        data.response || '任务已完成',
+                        data.agent_type,
+                        data.process_log,
+                        data.execution_time,
+                        data.total_time
+                    );
+                } else {
+                    addError(data.error || '处理失败');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addError(`请求失败: ${error.message}`);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="m3.543 8.883 7.042-7.047a2 2 0 0 1 2.828 0l7.043 7.046a1 1 0 0 1 0 1.415l-.701.701a1 1 0 0 1-1.414 0L13.3 5.956v15.792a1 1 0 0 1-1 1h-.99a1 1 0 0 1-1-1V6.342l-4.654 4.656a1 1 0 0 1-1.414 0l-.7-.7a1 1 0 0 1 0-1.415"></path></svg>';
+                scrollToBottom();
+            }
+        }
+
+        function addUserMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message user-message';
+            messageElement.textContent = message;
+            chatMessages.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function addSystemMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message system-message';
+            messageElement.textContent = message;
+            chatMessages.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function addAssistantMessage(message, agentType, processLog, executionTime, totalTime) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message assistant-message';
+            
+            // 添加Agent标识和耗时
+            const badgeContainer = document.createElement('div');
+            badgeContainer.style.marginBottom = '6px';
+            
+            const badge = document.createElement('span');
+            badge.className = 'agent-badge';
+            badge.textContent = getAgentDisplayName(agentType);
+            badgeContainer.appendChild(badge);
+            
+            if (executionTime !== undefined) {
+                const timeBadge = document.createElement('span');
+                timeBadge.className = 'time-badge';
+                timeBadge.textContent = `⚡ ${executionTime}秒`;
+                badgeContainer.appendChild(timeBadge);
+            }
+            
+            if (totalTime !== undefined) {
+                const totalTimeBadge = document.createElement('span');
+                totalTimeBadge.className = 'time-badge';
+                totalTimeBadge.textContent = `⏱️ 总计 ${totalTime}秒`;
+                badgeContainer.appendChild(totalTimeBadge);
+            }
+            
+            messageElement.appendChild(badgeContainer);
+            
+            // 添加主要内容
+            const content = document.createElement('div');
+            content.className = 'markdown-content';
+            content.innerHTML = formatMessage(message);
+            messageElement.appendChild(content);
+            
+            // 如果有执行日志，添加可展开的日志区域
+            if (processLog && processLog.trim()) {
+                const logToggle = document.createElement('div');
+                logToggle.style.marginTop = '8px';
+                logToggle.style.cursor = 'pointer';
+                logToggle.style.color = '#666';
+                logToggle.style.fontSize = '0.85rem';
+                logToggle.innerHTML = '📋 查看执行过程 ▼';
+                
+                const logContent = document.createElement('div');
+                logContent.className = 'process-log';
+                logContent.textContent = processLog;
+                logContent.style.display = 'none';
+                
+                logToggle.onclick = () => {
+                    if (logContent.style.display === 'none') {
+                        logContent.style.display = 'block';
+                        logToggle.innerHTML = '📋 隐藏执行过程 ▲';
+                    } else {
+                        logContent.style.display = 'none';
+                        logToggle.innerHTML = '📋 查看执行过程 ▼';
+                    }
+                };
+                
+                messageElement.appendChild(logToggle);
+                messageElement.appendChild(logContent);
+            }
+            
+            chatMessages.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function formatMessage(message) {
+            // 简单的markdown格式化
+            return message
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function addError(message) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.textContent = message;
+            chatMessages.appendChild(errorElement);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 100);
+        }
+
+        submitButton.addEventListener('click', handleSubmit);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+            }
+        });
+
+        // 更新输入框提示文本
+        agentSelector.addEventListener('change', (e) => {
+            const placeholders = {
+                'plan-solve': '例如：一个水果店周一卖出15个苹果，周二是周一的两倍...',
+                'react': '例如：苹果最新的手机是哪一款？它的主要卖点是什么？',
+                'reflection': '例如：编写一个Python函数，找出1到n之间所有的素数'
+            };
+            userInput.placeholder = placeholders[e.target.value] || '输入你的问题...';
+        });
+    </script>
+</body>
+</html>
