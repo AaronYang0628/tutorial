@@ -1,19 +1,14 @@
-import os
 import ast
-from llm_client import HelloAgentsLLM
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.llm_client import HelloAgentsLLM
 from dotenv import load_dotenv
 from typing import List, Dict
 
-# 加载 .env 文件中的环境变量，处理文件不存在异常
-try:
-    load_dotenv()
-except FileNotFoundError:
-    print("警告：未找到 .env 文件，将使用系统环境变量。")
-except Exception as e:
-    print(f"警告：加载 .env 文件时出错: {e}")
+load_dotenv()
 
-# --- 1. LLM客户端定义 ---
-# 假设你已经有llm_client.py文件，里面定义了HelloAgentsLLM类
 
 # --- 2. 规划器 (Planner) 定义 ---
 PLANNER_PROMPT_TEMPLATE = """
@@ -38,7 +33,7 @@ class Planner:
         messages = [{"role": "user", "content": prompt}]
         
         print("--- 正在生成计划 ---")
-        response_text = self.llm_client.think(messages=messages) or ""
+        response_text = self.llm_client.think(user_messages=messages) or ""
         print(f"✅ 计划已生成:\n{response_text}")
         
         try:
@@ -90,7 +85,7 @@ class Executor:
             )
             messages = [{"role": "user", "content": prompt}]
             
-            response_text = self.llm_client.think(messages=messages) or ""
+            response_text = self.llm_client.think(user_messages=messages) or ""
             
             history += f"步骤 {i}: {step}\n结果: {response_text}\n\n"
             final_answer = response_text
