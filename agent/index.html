@@ -166,6 +166,44 @@
             color: #1a1a1a;
         }
 
+        .thinking-message {
+            align-self: flex-start;
+            background: #fafafa;
+            border-left: 3px solid #ddd;
+            color: #999;
+            font-size: 0.85rem;
+            padding: 10px 14px;
+            max-width: 85%;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .thinking-header {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .thinking-content {
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        .final-answer {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #f5f5f5;
+            border-radius: 18px;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
         .system-message {
             align-self: flex-start;
             background: transparent;
@@ -200,37 +238,6 @@
             padding-bottom: max(12px, env(safe-area-inset-bottom));
             border-top: none;
             background: white;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .agent-selector-container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 6px;
-        }
-
-        .agent-selector {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            background: white;
-            font-size: 14px;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            outline: none;
-        }
-
-        .agent-selector:hover {
-            border-color: #666;
-        }
-
-        .agent-selector:focus {
-            border-color: #1a1a1a;
         }
 
         .input-container {
@@ -251,12 +258,81 @@
             border-color: #1a1a1a;
         }
 
-        .input-row {
+        /* Agent选择器样式 */
+        .agent-selector-wrapper {
+            position: relative;
+        }
+
+        .agent-display {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #e0e0e0;
             display: flex;
-            gap: 6px;
             align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .agent-display:hover {
+            background: #f8f9fa;
+            border-color: #666;
+        }
+
+        .agent-dropdown {
+            position: absolute;
+            bottom: 45px;
+            left: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            min-width: 220px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .agent-dropdown.show {
+            display: block;
+            animation: dropdownSlideUp 0.2s ease;
+        }
+
+        @keyframes dropdownSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .agent-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .agent-option:hover {
+            background: #f8f9fa;
+        }
+
+        .agent-option.selected {
+            background: #e9ecef;
+            font-weight: 500;
+        }
+
+        .agent-option-icon {
+            font-size: 1.2rem;
+        }
+
+        .agent-option-text {
             flex: 1;
-            min-width: 0;
         }
 
         #user-input {
@@ -392,17 +468,17 @@
             .agent-card:hover {
                 cursor: pointer;
             }
-
-            .agent-selector-container {
-                padding: 0;
-            }
         }
 
         /* 小屏幕优化 */
         @media (max-width: 768px) {
-            .agent-selector {
-                font-size: 13px;
-                padding: 8px 10px;
+            .agent-dropdown {
+                min-width: 200px;
+            }
+
+            .agent-option {
+                padding: 10px 12px;
+                font-size: 0.85rem;
             }
         }
     </style>
@@ -440,25 +516,33 @@
         
         <!-- 输入区域 -->
         <div class="input-area">
-            <!-- Agent选择器 -->
-            <div class="agent-selector-container">
-                <select id="agent-selector" class="agent-selector">
-                    <option value="plan-solve">🎯 Plan-and-Solve - 逻辑推理与规划</option>
-                    <option value="react">🔍 ReAct - 搜索与实时信息</option>
-                    <option value="reflection">💡 Reflection - 代码优化</option>
-                </select>
-            </div>
-            
-            <!-- 输入框 -->
             <div class="input-container">
-                <div class="input-row">
-                    <input type="text" id="user-input" placeholder="输入你的问题..." />
-                    <button id="submit-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="m3.543 8.883 7.042-7.047a2 2 0 0 1 2.828 0l7.043 7.046a1 1 0 0 1 0 1.415l-.701.701a1 1 0 0 1-1.414 0L13.3 5.956v15.792a1 1 0 0 1-1 1h-.99a1 1 0 0 1-1-1V6.342l-4.654 4.656a1 1 0 0 1-1.414 0l-.7-.7a1 1 0 0 1 0-1.415"></path>
-                        </svg>
-                    </button>
+                <!-- Agent选择器 -->
+                <div class="agent-selector-wrapper">
+                    <div class="agent-display" id="agent-display">🎯</div>
+                    <div class="agent-dropdown" id="agent-dropdown">
+                        <div class="agent-option selected" data-value="plan-solve" data-icon="🎯">
+                            <span class="agent-option-icon">🎯</span>
+                            <span class="agent-option-text">Plan-and-Solve</span>
+                        </div>
+                        <div class="agent-option" data-value="react" data-icon="🔍">
+                            <span class="agent-option-icon">🔍</span>
+                            <span class="agent-option-text">ReAct</span>
+                        </div>
+                        <div class="agent-option" data-value="reflection" data-icon="💡">
+                            <span class="agent-option-icon">💡</span>
+                            <span class="agent-option-text">Reflection</span>
+                        </div>
+                    </div>
                 </div>
+                
+                <input type="text" id="user-input" placeholder="输入你的问题..." />
+                
+                <button id="submit-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="m3.543 8.883 7.042-7.047a2 2 0 0 1 2.828 0l7.043 7.046a1 1 0 0 1 0 1.415l-.701.701a1 1 0 0 1-1.414 0L13.3 5.956v15.792a1 1 0 0 1-1 1h-.99a1 1 0 0 1-1-1V6.342l-4.654 4.656a1 1 0 0 1-1.414 0l-.7-.7a1 1 0 0 1 0-1.415"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
@@ -469,9 +553,60 @@
         const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const submitButton = document.getElementById('submit-button');
-        const agentSelector = document.getElementById('agent-selector');
+        const agentDisplay = document.getElementById('agent-display');
+        const agentDropdown = document.getElementById('agent-dropdown');
 
         let isFirstMessage = true;
+        let selectedAgent = 'plan-solve';
+        let currentThinkingElement = null;
+
+        // Agent选择器逻辑
+        const agentIcons = {
+            'plan-solve': '🎯',
+            'react': '🔍',
+            'reflection': '💡'
+        };
+
+        const agentPlaceholders = {
+            'plan-solve': '例如：一个水果店周一卖出15个苹果，周二是周一的两倍...',
+            'react': '例如：苹果最新的手机是哪一款？它的主要卖点是什么？',
+            'reflection': '例如：编写一个Python函数，找出1到n之间所有的素数'
+        };
+
+        // 点击Agent显示按钮切换下拉菜单
+        agentDisplay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            agentDropdown.classList.toggle('show');
+        });
+
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', (e) => {
+            if (!agentDropdown.contains(e.target) && e.target !== agentDisplay) {
+                agentDropdown.classList.remove('show');
+            }
+        });
+
+        // 选择Agent选项
+        document.querySelectorAll('.agent-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.dataset.value;
+                const icon = option.dataset.icon;
+                
+                // 更新选中状态
+                document.querySelectorAll('.agent-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                option.classList.add('selected');
+                
+                // 更新显示
+                agentDisplay.textContent = icon;
+                selectedAgent = value;
+                userInput.placeholder = agentPlaceholders[value];
+                
+                // 关闭下拉菜单
+                agentDropdown.classList.remove('show');
+            });
+        });
 
         // 根据agent类型获取显示名称
         function getAgentDisplayName(agentType) {
@@ -492,14 +627,22 @@
         }
 
         async function handleSubmit() {
-            const question = userInput.value.trim();
-            if (!question) return;
-
-            const selectedAgent = agentSelector.value;
+            let question = userInput.value.trim();
+            
+            // 如果输入为空，使用placeholder中的示例问题
+            if (!question) {
+                question = userInput.placeholder;
+                // 如果placeholder也是默认的，就不发送
+                if (question === '输入你的问题...') {
+                    return;
+                }
+            }
 
             hideWelcome();
             addUserMessage(question);
-            addSystemMessage(`🤖 正在调用 ${getAgentDisplayName(selectedAgent)} Agent...`);
+            
+            // 创建思考过程消息元素
+            currentThinkingElement = createThinkingMessage();
             
             userInput.value = '';
             submitButton.disabled = true;
@@ -525,24 +668,88 @@
 
                 const data = await response.json();
                 
+                console.log('收到响应:', data); // 调试日志
+                
                 if (data.status === 'success') {
-                    addAssistantMessage(
+                    // 显示思考过程
+                    if (data.process_log && data.process_log.trim()) {
+                        console.log('更新思考过程:', data.process_log.substring(0, 100)); // 调试日志
+                        updateThinkingMessage(data.process_log);
+                        // 标记思考消息已完成，但不移除
+                        finalizeThinkingMessage();
+                    } else {
+                        // 如果没有思考过程，移除思考消息
+                        if (currentThinkingElement && currentThinkingElement.parentNode) {
+                            currentThinkingElement.remove();
+                            currentThinkingElement = null;
+                        }
+                    }
+                    
+                    // 显示最终答案
+                    addFinalAnswer(
                         data.response || '任务已完成',
                         data.agent_type,
-                        data.process_log,
                         data.execution_time,
                         data.total_time
                     );
                 } else {
+                    // 出错时移除思考消息
+                    if (currentThinkingElement && currentThinkingElement.parentNode) {
+                        currentThinkingElement.remove();
+                        currentThinkingElement = null;
+                    }
                     addError(data.error || '处理失败');
                 }
             } catch (error) {
                 console.error('Error:', error);
+                // 出错时移除思考消息
+                if (currentThinkingElement && currentThinkingElement.parentNode) {
+                    currentThinkingElement.remove();
+                    currentThinkingElement = null;
+                }
                 addError(`请求失败: ${error.message}`);
             } finally {
                 submitButton.disabled = false;
                 submitButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="m3.543 8.883 7.042-7.047a2 2 0 0 1 2.828 0l7.043 7.046a1 1 0 0 1 0 1.415l-.701.701a1 1 0 0 1-1.414 0L13.3 5.956v15.792a1 1 0 0 1-1 1h-.99a1 1 0 0 1-1-1V6.342l-4.654 4.656a1 1 0 0 1-1.414 0l-.7-.7a1 1 0 0 1 0-1.415"></path></svg>';
                 scrollToBottom();
+            }
+        }
+
+        function createThinkingMessage() {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'thinking-message';
+            
+            const header = document.createElement('div');
+            header.className = 'thinking-header';
+            header.textContent = '🤔 思考过程:';
+            
+            const content = document.createElement('div');
+            content.className = 'thinking-content';
+            content.textContent = '正在思考中...';
+            content.id = 'thinking-content';
+            
+            messageElement.appendChild(header);
+            messageElement.appendChild(content);
+            chatMessages.appendChild(messageElement);
+            scrollToBottom();
+            return messageElement;
+        }
+
+        function updateThinkingMessage(processLog) {
+            if (currentThinkingElement) {
+                const contentElement = currentThinkingElement.querySelector('#thinking-content');
+                if (contentElement) {
+                    contentElement.textContent = processLog;
+                    scrollToBottom();
+                }
+            }
+        }
+
+        function finalizeThinkingMessage() {
+            // 不移除思考消息，只是标记为已完成
+            if (currentThinkingElement) {
+                currentThinkingElement.style.marginBottom = '12px';
+                currentThinkingElement = null;
             }
         }
 
@@ -562,7 +769,9 @@
             scrollToBottom();
         }
 
-        function addAssistantMessage(message, agentType, processLog, executionTime, totalTime) {
+        function addFinalAnswer(message, agentType, executionTime, totalTime) {
+            // 不移除思考消息，思考消息会保留在上方
+            
             const messageElement = document.createElement('div');
             messageElement.className = 'message assistant-message';
             
@@ -591,39 +800,11 @@
             
             messageElement.appendChild(badgeContainer);
             
-            // 添加主要内容
+            // 添加最终答案
             const content = document.createElement('div');
             content.className = 'markdown-content';
             content.innerHTML = formatMessage(message);
             messageElement.appendChild(content);
-            
-            // 如果有执行日志，添加可展开的日志区域
-            if (processLog && processLog.trim()) {
-                const logToggle = document.createElement('div');
-                logToggle.style.marginTop = '8px';
-                logToggle.style.cursor = 'pointer';
-                logToggle.style.color = '#666';
-                logToggle.style.fontSize = '0.85rem';
-                logToggle.innerHTML = '📋 查看执行过程 ▼';
-                
-                const logContent = document.createElement('div');
-                logContent.className = 'process-log';
-                logContent.textContent = processLog;
-                logContent.style.display = 'none';
-                
-                logToggle.onclick = () => {
-                    if (logContent.style.display === 'none') {
-                        logContent.style.display = 'block';
-                        logToggle.innerHTML = '📋 隐藏执行过程 ▲';
-                    } else {
-                        logContent.style.display = 'none';
-                        logToggle.innerHTML = '📋 查看执行过程 ▼';
-                    }
-                };
-                
-                messageElement.appendChild(logToggle);
-                messageElement.appendChild(logContent);
-            }
             
             chatMessages.appendChild(messageElement);
             scrollToBottom();
@@ -658,16 +839,6 @@
                 e.preventDefault();
                 handleSubmit();
             }
-        });
-
-        // 更新输入框提示文本
-        agentSelector.addEventListener('change', (e) => {
-            const placeholders = {
-                'plan-solve': '例如：一个水果店周一卖出15个苹果，周二是周一的两倍...',
-                'react': '例如：苹果最新的手机是哪一款？它的主要卖点是什么？',
-                'reflection': '例如：编写一个Python函数，找出1到n之间所有的素数'
-            };
-            userInput.placeholder = placeholders[e.target.value] || '输入你的问题...';
         });
     </script>
 </body>
