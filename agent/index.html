@@ -488,23 +488,23 @@
         <!-- 欢迎屏幕 -->
         <div class="welcome-screen" id="welcome-screen">
             <div class="title-line">
-                <h1>Multi-Agent</h1>
-                <span class="demo-tag">AI System</span>
+                <h1>Basic Agent</h1>
+                <span class="demo-tag">demo</span>
             </div>
-            <p class="subtitle">智能多代理系统 - 根据任务类型选择最合适的AI助手</p>
+            <p class="subtitle">Agent集合系统 - 根据任务类型选择最合适的AI助手</p>
             
             <div class="agent-cards">
                 <div class="agent-card">
                     <h3>🎯 Plan-and-Solve</h3>
-                    <p>擅长将复杂问题分解为多个步骤，逐步解决。适合数学问题、多步推理。</p>
+                    <p>当你的任务, 逻辑路径清晰，侧重内部推理和步骤分解</p>
                 </div>
                 <div class="agent-card">
                     <h3>🔍 ReAct</h3>
-                    <p>结合推理和行动，可调用外部工具。适合需要搜索的实时信息查询。</p>
+                    <p>当你的任务，充满不确定性，需要与外部PAI或者网页交互</p>
                 </div>
                 <div class="agent-card">
                     <h3>💡 Reflection</h3>
-                    <p>通过自我反思和迭代优化。适合代码生成和算法优化任务。</p>
+                    <p>当你的任务，对最终结果的质量和可靠性有极致要求</p>
                 </div>
             </div>
         </div>
@@ -568,7 +568,7 @@
         };
 
         const agentPlaceholders = {
-            'plan-solve': '例如：一个水果店周一卖出15个苹果，周二是周一的两倍...',
+            'plan-solve': '例如：将大象放在冰箱里，需要几步？',
             'react': '例如：苹果最新的手机是哪一款？它的主要卖点是什么？',
             'reflection': '例如：编写一个Python函数，找出1到n之间所有的素数'
         };
